@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Burn Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #002aff;
+            background: url('bg_web2.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            animation: fadeIn 1s ease;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            animation: slideIn 1s ease;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #000000;
+        }
+        
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        label {
+            font-weight: bold;
+        }
+        
+        input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        
+        input[type="submit"] {
+            grid-column: span 2;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 4px;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        
+        input[type="submit"]:hover {
+            background-color: #333;
+            transform: scale(1.05);
+        }
+        
+        #result {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        
+        .calorie-bar {
+            height: 20px;
+            background-color: #ddd;
+            margin-top: 20px;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .calorie-segments {
+            display: flex;
+            height: 100%;
+        }
+        
+        .segment {
+            flex-grow: 1;
+        }
+        
+        .segment-0 {
+            background-color: #00ff00;
+            /* Green */
+            flex-grow: 0.2;
+        }
+        
+        .segment-1 {
+            background-color: #ccff00;
+            /* Light Green */
+            flex-grow: 0.2;
+        }
+        
+        .segment-2 {
+            background-color: #ffcc00;
+            /* Yellow */
+            flex-grow: 0.2;
+        }
+        
+        .segment-3 {
+            background-color: #ff9900;
+            /* Orange */
+            flex-grow: 0.2;
+        }
+        
+        .segment-4 {
+            background-color: #ff0000;
+            /* Red */
+            flex-grow: 0.2;
+        }
+        
+        .calorie-fill {
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        .knob {
+            width: 20px;
+            height: 20px;
+            background-color: #000;
+            border-radius: 50%;
+            position: absolute;
+            top: -5px;
+            transform: translateX(-50%);
+            z-index: 2;
+            transition: left 2s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Calorie Burn Prediction</h1>
+        <form id="predictionForm">
+            <label for="gender">Gender:</label>
+            <input type="number" id="gender" name="gender" required>
+
+            <label for="age">Age:</label>
+            <input type="number" id="age" name="age" required>
+
+            <label for="height">Height (cm):</label>
+            <input type="number" id="height" name="height" required>
+
+            <label for="weight">Weight (kg):</label>
+            <input type="number" id="weight" name="weight" required>
+
+            <label for="duration">Duration (min):</label>
+            <input type="number" id="duration" name="duration" required>
+
+            <label for="heart_rate">Heart Rate:</label>
+            <input type="number" id="heart_rate" name="heart_rate" required>
+
+            <label for="body_temp">Body Temperature (°C):</label>
+            <input type="number" id="body_temp" name="body_temp" required step="0.01">
+
+            <input type="submit" value="Predict">
+        </form>
+        <h2 id="result"></h2>
+        <div class="calorie-bar">
+            <div class="calorie-segments">
+                <div class="segment segment-0"></div>
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <div class="segment segment-4"></div>
+            </div>
+            <div class="calorie-fill"></div>
+            <div class="knob" id="knob"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = {
+                gender: parseInt(document.getElementById('gender').value),
+                age: parseInt(document.getElementById('age').value),
+                height: parseInt(document.getElementById('height').value),
+                weight: parseInt(document.getElementById('weight').value),
+                duration: parseInt(document.getElementById('duration').value),
+                heart_rate: parseInt(document.getElementById('heart_rate').value),
+                body_temp: parseFloat(document.getElementById('body_temp').value)
+            };
+
+            const response = await fetch('http://127.0.0.1:5000/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+            const prediction = result.prediction;
+            const knob = document.getElementById('knob');
+            const barWidth = document.querySelector('.calorie-bar').offsetWidth;
+
+            // Calculate the position of the knob based on the prediction
+            const knobPosition = Math.min(prediction, 250) / 250 * barWidth;
+
+            document.getElementById('result').innerText = `Predicted Calories Burned: ${prediction}`;
+            knob.style.left = `${knobPosition}px`;
+        });
+    </script>
+</body>
+
+</html>
